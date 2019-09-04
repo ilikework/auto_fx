@@ -1,0 +1,412 @@
+<?js
+var query = nodeurl.parse(request.url, true).query;
+if(query.act == 'ajax') {
+	if(request._body != '1111') {
+		out.write('[NG]pwd error.');
+		return;
+	}
+	if(query.ajaxid == 'updlist') {
+		out.write('[OK]' + JSON.stringify(g_orderinfo));
+		return;
+	}
+	else if(query.ajaxid == 'updtest' || query.ajaxid == 'updtest1') {
+		var oretu = {
+			gain:g_save['test_s'].gain,
+			date:g_save['test_s'].date,
+			testarr:testarr,
+		};
+		out.write('[OK]' + JSON.stringify(oretu));
+		return;
+	}
+	else if(query.ajaxid == 'updtest2') {
+		var oretu = {
+			gain:g_save['test_s'].gain,
+			list:g_save['test_s'].list,
+			date:g_save['test_s'].date,
+			testarr:testarr,
+			sell:g_orderinfo['now_sell'],
+			buy:g_orderinfo['now_buy'],
+		};
+		out.write('[OK]' + JSON.stringify(oretu));
+		return;
+	}
+	else if(query.ajaxid == 'updlogin') {
+		$start_fx(0); // stop flag = 0
+		out.write('[OK]start_fx.');
+		return;
+	}
+	else if(query.ajaxid == 'logoff') {
+		$start_fx(1); // stop flag = 1
+		out.write('[OK]stop_fx.');
+		return;
+	}
+	else if(query.ajaxid == 'updpause') {
+		$pause_fx();
+		out.write('[OK]pause_fx, old:'+ret);
+		return;
+	}
+	else if(query.ajaxid == 'updresume') {
+		var ret = $resume_fx();
+		out.write('[OK]resume_fx, old:'+ret);
+		return;
+	}
+	else if(query.ajaxid == 'loadcfg') {
+		$loadConfig();
+		out.write('[OK]loadcfg ok.');
+		return;
+	}
+	else if(query.ajaxid == 'ajust_gain_up') {
+		$ajust_gain_up();
+		out.write('[OK]ajust_gain_up ok.');
+		return;
+	}	
+	else if(query.ajaxid == 'ajust_gain_down') {
+		$ajust_gain_down();
+		out.write('[OK]ajust_gain_down ok.');
+		return;
+	}	
+	else if(query.ajaxid == 'ajust_price_up') {
+		$ajust_price_up();
+		out.write('[OK]ajust_price_up ok.');
+		return;
+	}	
+	else if(query.ajaxid == 'ajust_price_down') {
+		$ajust_price_down();
+		out.write('[OK]ajust_price_down ok.');
+		return;
+	}	
+	else if(query.ajaxid == 'ajust_range_up') {
+		$ajust_range_up();
+		out.write('[OK]ajust_range_up ok.');
+		return;
+	}	
+	else if(query.ajaxid == 'ajust_range_down') {
+		$ajust_range_down();
+		out.write('[OK]ajust_range_down ok.');
+		return;
+	}	
+	else if(query.ajaxid == 'hlist') {
+		var fret = fList('./log/', true);
+		var sret = '';
+		for(var i in fret) {
+			if(fret[i].substring(0, 10) == 'fxmp-test-' || fret[i].substring(0, 11) == 'fxsbi-test-') {
+				sret += '<input onclick="updact(\'list'+fret[i]+'\');" type="button" value="'+fret[i]+'">';
+			}
+		}
+		if(sret == '') {
+			sret = '(no data)';
+		}
+		out.write('[OK]' + sret);
+		return;
+	}
+
+	else if(query.ajaxid == 'doout' && query.ccid && query.ccid != '') {
+		g_save['cContractId'] = query.ccid;
+		out.write('[OK]' + query.ccid);
+		return;
+	}
+
+	else if(query.ajaxid.substring(0, 4) == 'list') {
+		var spath = query.ajaxid.substring(4);
+		var txt = ''+fRead('./log/'+spath);
+		var json = JSON.parse(txt);
+		var oretu = {
+			gain:json.gain,
+			list:json.list,
+			date:json.date,
+			testarr:testarr,
+			sell:g_orderinfo['now_sell'],
+			buy:g_orderinfo['now_buy'],
+		};
+		out.write('[OK]' + JSON.stringify(oretu));
+		return;
+	}
+}
+
+?>
+
+<!--
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh-cn">
+-->
+<!DOCTYPE html>  
+<html lang="zh-cn">  
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>myinfo</title>
+<script language="javascript" src="common.js" type="text/javascript"></script>
+<script language="javascript" src="commonutil.js" type="text/javascript"></script>
+<style type="text/css">
+INPUT {font-size:16pt}
+</style>
+</head>
+<body>
+<input onclick="updact('updlogin')" type="button" value="Relogin">
+<input onclick="updact('logoff')" type="button" value="Logoff">
+<input onclick="updact('updpause')" type="button" value="Pause">
+<input onclick="updact('updresume')" type="button" value="Resume">
+<input onclick="updact('loadcfg')" type="button" value="Load Cfg">
+ pwd:<input type="password" value="" id="pwd" name="pwd" style="width:80px;">
+<div style="height:7px;"></div>
+<input onclick="updlist();" type="button" value="List">
+<input onclick="updtest('updtest');" type="button" value="Test">
+<input onclick="updtest('updtest1');" type="button" value="Test(均)">
+<input onclick="updtest('updtest2');" type="button" value="Detail">
+<input onclick="updact('hlist');" type="button" value="History">
+<div style="height:7px;"></div>
+<input onclick="updact('ajust_gain_up');" type="button" value="gain_up" width="500px" >
+<input onclick="updact('ajust_gain_down');" type="button" value="gain_down" width="500px">
+<input onclick="updact('ajust_price_up');" type="button" value="price_up" width="500px">
+<input onclick="updact('ajust_price_down');" type="button" value="price_down" width="500px">
+<input onclick="updact('ajust_range_up');" type="button" value="range_up" width="500px">
+<input onclick="updact('ajust_range_down');" type="button" value="range_down" width="500px">
+<br>
+<div style="height:10px;"></div>
+<div id="price"></div>
+<input type="button" id="btnDisplayorHide" value="display/hide" OnClick="OnbtnDisplayorHideClicked()" width="500px"/>
+<div id="gain"></div>
+<div id="log"></div>
+<br>
+
+<script type="text/javascript">
+byId('pwd').value = readcookie('pwd');
+function ObjArraySort(ary, key, order) {
+    var reverse = 1;
+    if(order && order.toLowerCase() == "desc") 
+        reverse = -1;
+    ary.sort(function(a, b) {
+        if(a[key] < b[key])
+            return -1 * reverse;
+        else if(a[key] == b[key])
+            return 0;
+        else
+            return 1 * reverse;
+    });
+}
+function updlist() {
+	setcookie('pwd', byId('pwd').value);
+	byId('price').innerHTML = '';
+	byId('log').innerHTML = '';
+	postAjax(function(xml, objxml) {
+		if(xml.substring(0, 4) != '[OK]') {
+			alert(xml);
+			return;
+		}
+		
+		var g_orderinfo = JSON.parse(xml.substring(4));
+		if(!g_orderinfo.orderlist) {
+			g_orderinfo.orderlist = [];
+		}
+		var txtp = g_orderinfo.stop ? '<font color="red">STOP:系统停止中</font>, ' : 'stop:0, ';
+		txtp = txtp + (g_orderinfo.fxpause_f ? '<font color="red">pause:暂停交易</font>, ' : 'pause:0, ');
+		var txt1 = txtp+('pair:{pair}, sell:{now_sell}, buy:{now_buy}, zichan:{zc_zichan}, sunyi:{zc_sunyi}<br>sell:{tj_sellamount}, gain:{tj_sellgain}, buy:{tj_buyamount}, gain:{tj_buygain}, today gain:{tj_todaygain}<br>maxbalnceamount:{maxbalnceamount}, maxtotalamount:{maxtotalamount}, minremain:{minremain}, orderlist:'+g_orderinfo.orderlist.length+'<br>').format(g_orderinfo);
+
+		txt1 += 'price rang:<br>';
+		for(var i in g_orderinfo['pricerang']) {
+			var item = g_orderinfo['pricerang'][i];
+			txt1 += ''+item.min+'~'+item.max+', act:'+item.act+', amount buy:'+item.amount+', price buy:'+item.pspace +', amount sell:'+item.amount_s+', price sell:'+item.pspace_s +', gain:'+item.gspace+'<br>';
+		}
+		
+		var txtGain = 'gain history:<br>';
+		//txt1 += 'gain history:<br>';
+		var lastm = '';
+		var summ = 0;
+		var sumy = 0;
+		for(var i in g_orderinfo['tj_gain']) {
+			var m = i.substring(0, 6);
+			if(m != lastm) {
+				if(lastm != '') {
+					txtGain += 'sum:<font color="blue">'+summ+'</font><br>';
+				}
+				txtGain += m+'<br>';
+				lastm = m;
+				summ = 0;
+			}
+			summ += Math.floor(g_orderinfo['tj_gain'][i]);
+			sumy += Math.floor(g_orderinfo['tj_gain'][i]);
+			txtGain += i.substring(6, 8)+': <font color="blue">'+Math.floor(g_orderinfo['tj_gain'][i])+';</font> ';
+		}
+		txtGain += 'sum:<font color="blue">'+summ+'</font><br>';
+		txtGain += 'sum all:<font color="blue">'+sumy+'</font><br><br>';
+		var txt2 = '';
+		ObjArraySort(g_orderinfo.orderlist, 'price');
+		for(var i = 0; i < g_orderinfo.orderlist.length; i++) {
+			var item = g_orderinfo.orderlist[i];
+			if(item.time) {
+				item.time = item.time.substring(11);
+			}
+			if(!item.spot) {
+				if(item.type == 'sell') {
+					item.spot = roundDecimal((item.price-g_orderinfo['now_buy'])*item.amount, 2);
+				}
+				else {
+					item.spot = roundDecimal((g_orderinfo['now_sell']-item.price)*item.amount, 2);
+				}
+			}
+			if(item.spot/1 > 0) {
+				item.spot = '<font color="blue">'+item.spot+'<input type=button value=out onclick="doout('+item.cContractId+')"></font>';
+			}
+			if(!item.time) {
+				item.time = '';
+			}
+			//cannot get swap:{swap}
+			txt2 += '{type}:{amount}/{price}, spot:{spot}, time:{time}<br>'.format(item);
+		}
+		byId('price').innerHTML = txt1;
+		byId('log').innerHTML = txt2;
+		byId('gain').innerHTML = txtGain;
+	}, '?act=ajax&ajaxid=updlist', ''+byId('pwd').value, true);
+}
+setTimeout(updlist, 1000);
+
+function testdisp(oretu, actid) {
+	var testarr = oretu.testarr;
+	var txtgain = '';
+	var txt = '';
+	if(oretu.date) {
+		txtgain += 'date:' + oretu.date+'<br>';
+	}
+	txtgain += '';
+	var lastpricespace = '';
+	for(var jj in testarr) {
+		var pricespace = testarr[jj].pspace;
+		var gainspace = testarr[jj].gspace;
+		var keyg = 'p:'+pricespace+', g:'+gainspace;
+		if(lastpricespace == '') {
+			lastpricespace = pricespace;
+		}
+		if(lastpricespace != pricespace) {
+			txtgain += '<span style="border-top:solid 1px #ccc;">';
+		}
+		if(actid == 'updtest1' || actid.substring(0, 4) == 'list') {
+			txtgain += 'p:'+pricespace+', g:'+gainspace + ', gain(*'+(pricespace/0.01)+'):' + Math.floor(oretu.gain[keyg] * pricespace/0.01) + ', len:' + oretu.gain['l_'+keyg] + '<br>';
+		}
+		else {
+			txtgain += 'p:'+pricespace+', g:'+gainspace + ', gain:' + oretu.gain[keyg] + ', len:' + oretu.gain['l_'+keyg] + '<br>';
+		}
+		if(lastpricespace != pricespace) {
+			lastpricespace = pricespace;
+			txtgain += '</span>';
+		}
+	}
+
+	if(oretu.list) {
+		for(var jj in testarr) {
+			var pricespace = testarr[jj].pspace;
+			var gainspace = testarr[jj].gspace;
+			var keyg = 'p:'+pricespace+', g:'+gainspace;
+			
+			txt += '<br>p:'+pricespace+', g:'+gainspace;
+			if(oretu.list[keyg]) {
+				txt += ', len:' + oretu.list[keyg].length + '<br>';
+				for(var i=oretu.list[keyg].length-1; i>=0; i--) {
+					var item = oretu.list[keyg][i];
+					txt += '{t}, {a}/{p}<br>'.format(item);
+				}
+			}
+			else {
+				txt += '<br>';
+			}
+		}
+	}
+	return {a:txtgain, b:txt};
+}
+function updtest(actid) {
+	setcookie('pwd', byId('pwd').value);
+	byId('price').innerHTML = '';
+	byId('log').innerHTML = '';
+	postAjax(function(xml, objxml) {
+		if(xml.substring(0, 4) != '[OK]') {
+			alert(xml);
+			return;
+		}
+
+		var oretu = JSON.parse(xml.substring(4));
+		var dispstr = testdisp(oretu, actid);
+		byId('price').innerHTML = dispstr.a;
+		byId('log').innerHTML = dispstr.b;
+	}, '?act=ajax&ajaxid='+actid, ''+byId('pwd').value, true);
+}
+
+function OnbtnDisplayorHideClicked()
+{
+	//var gainTxt = document.getElementById('gain'); 
+	var gainTxt = byId('gain'); 
+	if(gainTxt.style.display=='block')
+	{
+		gainTxt.style.display = 'none';
+	}
+	else
+	{
+		gainTxt.style.display = 'block';
+	}
+}
+
+function updact(act) {
+	setcookie('pwd', byId('pwd').value);
+	postAjax(function(xml, objxml) {
+		if(xml.substring(0, 4) != '[OK]') {
+			alert(xml);
+			return;
+		}
+		if(xml.indexOf('<input onclick="') > 0) {
+			byId('price').innerHTML = xml.substring(4);
+			byId('log').innerHTML = '';
+		}
+		else {
+			if(xml.indexOf('"gain":{"') > 0) {
+				var oretu = JSON.parse(xml.substring(4));
+				var dispstr = testdisp(oretu, act);
+				byId('log').innerHTML = dispstr.a + '<br><br>' + dispstr.b;
+			}
+			else {
+				byId('price').innerHTML = '';
+				byId('log').innerHTML = xml.substring(4);
+			}
+		}
+		if(act == 'updpause' || act == 'updresume' || act == 'loadcfg') {
+			setTimeout(updlist, 10);
+		}
+		else if(act == 'updlogin') {
+			setTimeout(updlist, 3000);
+		}
+		else if(act == 'logoff') {
+			setTimeout(updlist, 3000);
+		}
+		else if(act == 'ajust_gain_up') {
+			setTimeout(updlist,300);
+		}
+		else if(act == 'ajust_gain_down') {
+			setTimeout(updlist,300);
+		}
+		else if(act == 'ajust_price_up') {
+			setTimeout(updlist,300);
+		}
+		else if(act == 'ajust_price_down') {
+			setTimeout(updlist,300);
+		}
+		else if(act == 'ajust_range_up') {
+			setTimeout(updlist,300);
+		}
+		else if(act == 'ajust_range_down') {
+			setTimeout(updlist,300);
+		}
+	}, '?act=ajax&ajaxid='+act, ''+byId('pwd').value, true);
+}
+function doout(cContractId) {
+	if(!cContractId || cContractId=='') return;
+	if(!confirm('Really sell or buy '+ cContractId + '(only last submit will be valid, and need wait a while to refresh List, notice swap maybe minus)?')) return;
+
+	postAjax(function(xml, objxml) {
+		if(xml.substring(0, 4) != '[OK]') {
+			alert(xml);
+			return;
+		}
+		alert('submit ok, now refresh list.');
+		updlist();
+	}, '?act=ajax&ajaxid=doout&ccid='+cContractId, ''+byId('pwd').value, true);
+}
+</script>
+</body>
+</html>
